@@ -1,13 +1,12 @@
-// docusaurus.config.js
 module.exports = {
   title: 'Tech Tutorials',
   tagline: 'Learn Cloud, AI, and DevOps step by step',
-  url: 'https://your-username.github.io',
-  baseUrl: '/tutorials-site/',
+  url: 'https://valasamaram.github.io',  // GitHub username
+  baseUrl: '/Tech-tutorials/',                  // Repository name
   onBrokenLinks: 'throw',
   favicon: 'img/favicon.ico',
-  organizationName: 'your-username', // GitHub username
-  projectName: 'tutorials-site',     // Repo name
+  organizationName: 'valasamaram',       // GitHub username
+  projectName: 'Tech-tutorials',                // Repository name
 
   presets: [
     [
@@ -15,7 +14,7 @@ module.exports = {
       {
         docs: { sidebarPath: require.resolve('./sidebars.js') },
         blog: { showReadingTime: true },
-        theme: { customCss: require.resolve('./src/css/custom.css') },
+        theme: {  },
       },
     ],
   ],
