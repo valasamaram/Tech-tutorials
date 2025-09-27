@@ -1,0 +1,39 @@
+{
+  "permalink": "/Tech-tutorials/blog/2025/01/01/welcome",
+  "source": "@site/blog/2025-01-01-welcome.md",
+  "title": "Welcome to Tech Tutorials",
+  "description": "This is the first blog post of Tech Tutorials 🎉",
+  "date": "2025-01-01T00:00:00.000Z",
+  "tags": [
+    {
+      "inline": true,
+      "label": "welcome",
+      "permalink": "/Tech-tutorials/blog/tags/welcome"
+    },
+    {
+      "inline": true,
+      "label": "introduction",
+      "permalink": "/Tech-tutorials/blog/tags/introduction"
+    }
+  ],
+  "readingTime": 0.1,
+  "hasTruncateMarker": false,
+  "authors": [
+    {
+      "name": "Hero Reddy",
+      "url": "https://github.com/valasamaram",
+      "imageURL": "https://example.com/avatar.png",
+      "key": "hero",
+      "page": null
+    }
+  ],
+  "frontMatter": {
+    "title": "Welcome to Tech Tutorials",
+    "authors": "hero",
+    "tags": [
+      "welcome",
+      "introduction"
+    ]
+  },
+  "unlisted": false
+}
