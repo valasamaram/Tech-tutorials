@@ -1,145 +1,102 @@
 {
-  "/Tech-tutorials/__docusaurus/debug-6f8": {
-    "__comp": "__comp---theme-debug-config-23-a-2ff",
-    "__context": {
-      "plugin": "plugin---tech-tutorials-docusaurus-debugb-38-09a"
-    }
-  },
-  "/Tech-tutorials/__docusaurus/debug/config-946": {
-    "__comp": "__comp---theme-debug-config-23-a-2ff",
-    "__context": {
-      "plugin": "plugin---tech-tutorials-docusaurus-debugb-38-09a"
-    }
-  },
-  "/Tech-tutorials/__docusaurus/debug/content-97b": {
-    "__comp": "__comp---theme-debug-contentba-8-ce7",
-    "__context": {
-      "plugin": "plugin---tech-tutorials-docusaurus-debugb-38-09a"
-    },
-    "__props": "__props---tech-tutorials-docusaurus-debug-contentdc-6-fde"
-  },
-  "/Tech-tutorials/__docusaurus/debug/globalData-6be": {
-    "__comp": "__comp---theme-debug-global-dataede-0fa",
-    "__context": {
-      "plugin": "plugin---tech-tutorials-docusaurus-debugb-38-09a"
-    }
-  },
-  "/Tech-tutorials/__docusaurus/debug/metadata-744": {
-    "__comp": "__comp---theme-debug-site-metadata-68-e-3d4",
-    "__context": {
-      "plugin": "plugin---tech-tutorials-docusaurus-debugb-38-09a"
-    }
-  },
-  "/Tech-tutorials/__docusaurus/debug/registry-d10": {
-    "__comp": "__comp---theme-debug-registry-679-501",
-    "__context": {
-      "plugin": "plugin---tech-tutorials-docusaurus-debugb-38-09a"
-    }
-  },
-  "/Tech-tutorials/__docusaurus/debug/routes-2db": {
-    "__comp": "__comp---theme-debug-routes-946-699",
-    "__context": {
-      "plugin": "plugin---tech-tutorials-docusaurus-debugb-38-09a"
-    }
-  },
   "/Tech-tutorials/blog-65b": {
-    "__comp": "__comp---theme-blog-list-pagea-6-a-7ba",
+    "__comp": "a6aa9e1f",
     "__context": {
-      "plugin": "plugin---tech-tutorials-blog-369-bd7"
+      "plugin": "36994c47"
     },
-    "sidebar": "sidebar---tech-tutorials-blog-814-f2f",
+    "sidebar": "814f3328",
     "items": [
       {
-        "content": "content---tech-tutorials-blog-019-cd6"
+        "content": "019c0c06"
       }
     ],
-    "__props": "__props---tech-tutorials-bloga-96-92d"
+    "__props": "a96fcb64"
   },
   "/Tech-tutorials/blog/2025/01/01/welcome-325": {
-    "__comp": "__comp---theme-blog-post-pageccc-cab",
+    "__comp": "ccc49370",
     "__context": {
       "data": {
-        "blogMetadata": "blogMetadata---tech-tutorials-blog-2025-01-01-welcomeace-670"
+        "blogMetadata": "acecf23e"
       },
-      "plugin": "plugin---tech-tutorials-blog-369-bd7"
+      "plugin": "36994c47"
     },
-    "sidebar": "sidebar---tech-tutorials-blog-814-f2f",
-    "content": "content---tech-tutorials-blog-2025-01-01-welcome-3-f-1-867"
+    "sidebar": "814f3328",
+    "content": "3f11435e"
   },
   "/Tech-tutorials/blog/archive-837": {
-    "__comp": "__comp---theme-blog-archive-page-9-e-4-1d8",
+    "__comp": "9e4087bc",
     "__context": {
-      "plugin": "plugin---tech-tutorials-blog-369-bd7"
+      "plugin": "36994c47"
     },
-    "__props": "__props---tech-tutorials-blog-archive-2-d-5-e82"
+    "__props": "2d54d950"
   },
   "/Tech-tutorials/blog/authors-563": {
-    "__comp": "__comp---theme-blog-pages-blog-authors-list-page-621-70c",
+    "__comp": "621db11d",
     "__context": {
       "data": {
-        "blogMetadata": "blogMetadata---tech-tutorials-blog-2025-01-01-welcomeace-670"
+        "blogMetadata": "acecf23e"
       },
-      "plugin": "plugin---tech-tutorials-blog-369-bd7"
+      "plugin": "36994c47"
     },
-    "sidebar": "sidebar---tech-tutorials-blog-814-f2f",
-    "__props": "__props---tech-tutorials-blog-authors-511-b7d"
+    "sidebar": "814f3328",
+    "__props": "5113d7c8"
   },
   "/Tech-tutorials/blog/tags-643": {
-    "__comp": "__comp---theme-blog-tags-list-page-01-a-d0b",
+    "__comp": "01a85c17",
     "__context": {
-      "plugin": "plugin---tech-tutorials-blog-369-bd7"
+      "plugin": "36994c47"
     },
-    "sidebar": "sidebar---tech-tutorials-blog-814-f2f",
-    "__props": "__props---tech-tutorials-blog-tags-156-126"
+    "sidebar": "814f3328",
+    "__props": "15662deb"
   },
   "/Tech-tutorials/blog/tags/introduction-739": {
-    "__comp": "__comp---theme-blog-tags-posts-page-687-b6c",
+    "__comp": "6875c492",
     "__context": {
-      "plugin": "plugin---tech-tutorials-blog-369-bd7"
+      "plugin": "36994c47"
     },
-    "sidebar": "sidebar---tech-tutorials-blog-814-f2f",
+    "sidebar": "814f3328",
     "items": [
       {
-        "content": "content---tech-tutorials-blog-019-cd6"
+        "content": "019c0c06"
       }
     ],
-    "__props": "__props---tech-tutorials-blog-tags-introduction-65-a-df6"
+    "__props": "65abaa0d"
   },
   "/Tech-tutorials/blog/tags/welcome-171": {
-    "__comp": "__comp---theme-blog-tags-posts-page-687-b6c",
+    "__comp": "6875c492",
     "__context": {
-      "plugin": "plugin---tech-tutorials-blog-369-bd7"
+      "plugin": "36994c47"
     },
-    "sidebar": "sidebar---tech-tutorials-blog-814-f2f",
+    "sidebar": "814f3328",
     "items": [
       {
-        "content": "content---tech-tutorials-blog-019-cd6"
+        "content": "019c0c06"
       }
     ],
-    "__props": "__props---tech-tutorials-blog-tags-welcome-63-c-a00"
+    "__props": "63cfb95a"
   },
   "/Tech-tutorials/docs-f38": {
-    "__comp": "__comp---theme-docs-root-5-e-9-0b6",
+    "__comp": "5e95c892",
     "__context": {
-      "plugin": "plugin---tech-tutorials-docsaba-00a"
+      "plugin": "aba21aa0"
     }
   },
   "/Tech-tutorials/docs-18c": {
-    "__comp": "__comp---theme-doc-version-roota-7-b-5de",
-    "__props": "__props---tech-tutorials-docs-852-3e5"
+    "__comp": "a7bd4aaa",
+    "__props": "85240a86"
   },
   "/Tech-tutorials/docs-910": {
-    "__comp": "__comp---theme-doc-roota-94-67a"
+    "__comp": "a94703ab"
   },
   "/Tech-tutorials/docs/cloud/azure-bac": {
-    "__comp": "__comp---theme-doc-item-178-a40",
-    "content": "content---tech-tutorials-docs-cloud-azureff-7-df5"
+    "__comp": "17896441",
+    "content": "ff783d96"
   },
   "/Tech-tutorials/-e70": {
-    "__comp": "__comp---site-src-pages-index-jsc-4-f-f99",
+    "__comp": "c4f5d8e4",
     "__context": {
-      "plugin": "plugin---tech-tutorials-a-74-b3b"
+      "plugin": "a7456010"
     },
-    "config": "config---tech-tutorials-5-e-9-fe6"
+    "config": "5e9f5e1a"
   }
 }

@@ -17,7 +17,7 @@ export default {
       "classic",
       {
         "docs": {
-          "sidebarPath": "C:\\Users\\believeme\\Documents\\Tech-Tutorials\\sidebars.js"
+          "sidebarPath": "C:\\Users\\believeme\\Downloads\\Tech-tutorials\\sidebars.js"
         },
         "blog": {
           "showReadingTime": true

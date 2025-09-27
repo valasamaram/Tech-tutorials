@@ -4,8 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "start": "docusaurus start",
+  "build": "docusaurus build",
+  "serve": "docusaurus serve",
+  "deploy": "docusaurus deploy"
+}
+,
   "keywords": [],
   "author": "",
   "license": "ISC",

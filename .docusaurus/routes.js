@@ -3,41 +3,6 @@ import ComponentCreator from '@docusaurus/ComponentCreator';
 
 export default [
   {
-    path: '/Tech-tutorials/__docusaurus/debug',
-    component: ComponentCreator('/Tech-tutorials/__docusaurus/debug', '6f8'),
-    exact: true
-  },
-  {
-    path: '/Tech-tutorials/__docusaurus/debug/config',
-    component: ComponentCreator('/Tech-tutorials/__docusaurus/debug/config', '946'),
-    exact: true
-  },
-  {
-    path: '/Tech-tutorials/__docusaurus/debug/content',
-    component: ComponentCreator('/Tech-tutorials/__docusaurus/debug/content', '97b'),
-    exact: true
-  },
-  {
-    path: '/Tech-tutorials/__docusaurus/debug/globalData',
-    component: ComponentCreator('/Tech-tutorials/__docusaurus/debug/globalData', '6be'),
-    exact: true
-  },
-  {
-    path: '/Tech-tutorials/__docusaurus/debug/metadata',
-    component: ComponentCreator('/Tech-tutorials/__docusaurus/debug/metadata', '744'),
-    exact: true
-  },
-  {
-    path: '/Tech-tutorials/__docusaurus/debug/registry',
-    component: ComponentCreator('/Tech-tutorials/__docusaurus/debug/registry', 'd10'),
-    exact: true
-  },
-  {
-    path: '/Tech-tutorials/__docusaurus/debug/routes',
-    component: ComponentCreator('/Tech-tutorials/__docusaurus/debug/routes', '2db'),
-    exact: true
-  },
-  {
     path: '/Tech-tutorials/blog',
     component: ComponentCreator('/Tech-tutorials/blog', '65b'),
     exact: true
