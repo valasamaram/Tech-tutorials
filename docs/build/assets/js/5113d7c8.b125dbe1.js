@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunktech_tutorials=self.webpackChunktech_tutorials||[]).push([[75],{1355:a=>{a.exports=JSON.parse('{"authors":[{"name":"Hero Reddy","url":"https://github.com/valasamaram","imageURL":"https://example.com/avatar.png","key":"hero","page":null,"count":1}]}')}}]);

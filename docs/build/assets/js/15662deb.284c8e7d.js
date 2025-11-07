@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunktech_tutorials=self.webpackChunktech_tutorials||[]).push([[530],{1925:t=>{t.exports=JSON.parse('{"tags":[{"label":"welcome","permalink":"/Tech-tutorials/blog/tags/welcome","count":1},{"label":"introduction","permalink":"/Tech-tutorials/blog/tags/introduction","count":1}]}')}}]);

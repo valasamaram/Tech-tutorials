@@ -1,1 +1,0 @@
-"use strict";(self.webpackChunktech_tutorials=self.webpackChunktech_tutorials||[]).push([[496],{9497:t=>{t.exports=JSON.parse('{"metadata":{"permalink":"/Tech-tutorials/blog","page":1,"postsPerPage":10,"totalPages":1,"totalCount":1,"blogDescription":"Blog","blogTitle":"Blog"}}')}}]);
