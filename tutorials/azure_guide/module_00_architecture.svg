@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 1000 600">
+  <style>
+    .box { fill:#ffffff; stroke:#2b6cb0; stroke-width:2; rx:6; }
+    .small { font:12px sans-serif; fill:#1a202c }
+    .title { font:14px sans-serif; font-weight:600; fill:#1a202c }
+    .arrow { stroke:#2b6cb0; stroke-width:2; marker-end:url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2b6cb0" />
+    </marker>
+  </defs>
+
+  <!-- Edge / Client -->
+  <rect x="40" y="40" width="140" height="50" class="box" />
+  <text x="110" y="70" text-anchor="middle" class="title">Client</text>
+  <text x="110" y="86" text-anchor="middle" class="small">Browser / Mobile / API</text>
+
+  <!-- CDN / Front Door -->
+  <rect x="220" y="30" width="180" height="70" class="box" />
+  <text x="310" y="60" text-anchor="middle" class="title">Front Door / CDN</text>
+  <text x="310" y="76" text-anchor="middle" class="small">Global routing & caching</text>
+
+  <!-- App Gateway / WAF -->
+  <rect x="440" y="30" width="180" height="70" class="box" />
+  <text x="530" y="60" text-anchor="middle" class="title">App Gateway (WAF)</text>
+  <text x="530" y="76" text-anchor="middle" class="small">Edge WAF & SSL</text>
+
+  <!-- App Tier -->
+  <rect x="220" y="150" width="400" height="120" class="box" />
+  <text x="420" y="170" text-anchor="middle" class="title">Application Tier</text>
+  <text x="420" y="190" text-anchor="middle" class="small">App Service / VMSS / AKS (in VNet)</text>
+
+  <!-- Backend: DB, Storage, Messaging -->
+  <rect x="120" y="310" width="220" height="90" class="box" />
+  <text x="230" y="335" text-anchor="middle" class="title">Data & Storage</text>
+  <text x="230" y="352" text-anchor="middle" class="small">Azure SQL / Cosmos DB / Blob Storage</text>
+
+  <rect x="420" y="310" width="220" height="90" class="box" />
+  <text x="530" y="335" text-anchor="middle" class="title">Messaging & Processing</text>
+  <text x="530" y="352" text-anchor="middle" class="small">Service Bus / Event Grid / Functions</text>
+
+  <!-- Monitoring & Backup -->
+  <rect x="720" y="70" width="200" height="70" class="box" />
+  <text x="820" y="100" text-anchor="middle" class="title">Monitoring & Backup</text>
+  <text x="820" y="116" text-anchor="middle" class="small">Monitor / Log Analytics / Backup</text>
+
+  <!-- Arrows -->
+  <line x1="180" y1="65" x2="220" y2="65" class="arrow"/>
+  <line x1="400" y1="65" x2="440" y2="65" class="arrow"/>
+  <line x1="530" y1="100" x2="530" y2="150" class="arrow"/>
+  <line x1="420" y1="270" x2="420" y2="310" class="arrow"/>
+  <line x1="320" y1="270" x2="230" y2="310" class="arrow"/>
+  <line x1="620" y1="270" x2="530" y2="310" class="arrow"/>
+  <line x1="620" y1="200" x2="720" y2="105" class="arrow"/>
+  <line x1="540" y1="360" x2="700" y2="360" class="arrow"/>
+
+  <!-- Footer note -->
+  <text x="500" y="560" text-anchor="middle" class="small">Simple end-to-end architecture — use this as a template and adapt for security, compliance and scale</text>
+</svg>

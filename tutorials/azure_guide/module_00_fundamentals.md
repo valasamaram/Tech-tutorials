@@ -339,113 +339,177 @@ By the end of this module you will be able to:
 
   ---
 
-## Hands-on labs (practical) — quick, validated steps
-Do these labs in a sandbox subscription. Replace variable values with your subscription and resource names. Validate each step before moving on.
+## Conceptual deep-dive: architecture, networking, storage, compute, identity, governance, observability, and operations
 
-### Lab 0.1 — Setup & tools (10–20m)
-Goals: install Azure CLI / Az PowerShell, login, and set subscription.
+This section replaces hands-on step-by-step labs with a thorough conceptual guide aimed at learning and understanding core Azure architecture and operational patterns. It focuses on principles, trade-offs, and how components fit together.
 
-PowerShell (Windows) — install & login:
-```powershell
-# Install Azure CLI (one-time)
-Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I AzureCLI.msi /quiet'
+### Architecture fundamentals and design principles
+- Design for failure: assume any single component can fail; plan retries, idempotency, and degradations.
+- Design for scale: separate stateless compute and stateful storage; use autoscaling and partitioning.
+- Security-first: network isolation, principle of least privilege, strong identity controls, and encryption in transit/at rest.
+- Observability: instrument for metrics, logs, and traces from the start to enable fault diagnosis and capacity planning.
 
-# Login with browser
-az login
+### Networking: VNets, subnets, connectivity and security
+- Virtual Network (VNet): logical network boundary. Use subnets to segment workloads (front-end, app, data).
+- Subnet-level controls: NSGs (stateless packet filters) and ASGs (grouping by app role) to manage security rules.
+- Connectivity patterns:
+  - VNet peering: low-latency private connectivity within Azure between VNets.
+  - VPN Gateway / ExpressRoute: secure connectivity to on-premises; ExpressRoute offers private, high-throughput links.
+  - Service endpoints & Private Endpoints: secure access to PaaS services over private network paths.
+- Load balancing and ingress:
+  - Azure Load Balancer (L4) for internal/external TCP/UDP.
+  - Application Gateway (L7) with WAF for HTTP/HTTPS.
+  - Azure Front Door for global routing, caching, and SSL-offload.
+- Network design considerations: minimize blast radius, use segmentation, centralize shared services in a hub VNet (hub-and-spoke), and manage egress via NAT or Firewall.
 
-# List and select subscription
-az account list -o table
-az account set --subscription "<subscription-id-or-name>"
+### Compute: VMs, scale sets, containers, and orchestration
+- Virtual Machines (IaaS): full OS control. Use for legacy apps or when kernel-level access required.
+- Virtual Machine Scale Sets (VMSS): group of identical VMs that scale automatically and integrate with load balancers.
+- Availability Sets vs Availability Zones:
+  - Availability Set: protects against rack-level failures within a single datacenter by spreading VMs across fault and update domains.
+  - Availability Zone: physically separate datacenters within a region; better resilience than Availability Sets but requires region support.
+- Containers and orchestration:
+  - Azure Kubernetes Service (AKS) for orchestrating containers.
+  - Container Instances for simple container runs without orchestration.
+- Serverless compute:
+  - Azure Functions for event-driven code with automatic scale. Best for short-lived tasks and integration scenarios.
 
-# Validate
-az account show -o table
+### Storage: accounts, types, tiers, and redundancy
+- Storage account kinds: StorageV2 (general purpose v2) supports blobs, files, queues, tables.
+- Data access patterns and tiers:
+  - Hot: frequent access (higher cost)
+  - Cool: infrequent access (lower storage cost, higher access cost)
+  - Archive: long-term retention (lowest storage cost, high retrieval latency/cost)
+- Redundancy options:
+  - LRS (Locally redundant storage): 3 copies in single datacenter.
+  - ZRS (Zone-redundant): copies across zones in a region.
+  - GRS / RA-GRS (Geo-redundant): replicate to paired region for DR (asynchronous replication). RA-GRS allows read access in secondary region.
+- Access control: Shared Key, SAS tokens, Azure AD (role-based) for blobs; prefer AD-based auth and Private Endpoints for sensitive data.
 
-# Install Az PowerShell module (optional)
-Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force
-Connect-AzAccount
-```
+### Databases and data platforms
+- Azure SQL (PaaS): managed relational database with automated patching, backups, and high-availability options (zone-redundant, geo-restore).
+- Managed Instance: near 100% compatibility with SQL Server for lift-and-shift.
+- Cosmos DB: multi-model, globally distributed NoSQL with tunable consistency levels (strong, bounded staleness, session, consistent prefix, eventual).
+- Analytical stores: Synapse Analytics, Data Lake (ADLS Gen2) for big data workloads; separate OLTP/OLAP concerns.
 
-Notes: If your environment requires a service principal for automation, create one and limit its scopes.
+### Identity, authentication, and authorization (detailed)
+- Azure AD: cloud identity provider supporting OAuth2, OpenID Connect, and SAML. Central to authentication for users and apps.
+- App registrations & service principals:
+  - App Registration: application object in tenant (metadata, reply URLs, permissions).
+  - Service Principal: concrete instance of app usable to assign roles and obtain tokens.
+- Authentication flows:
+  - Authorization Code (interactive web apps)
+  - Client Credentials (server-to-server, uses client secret or certificate)
+  - Device Code, Resource Owner Password (legacy/limited use)
+- Managed Identities:
+  - System-assigned: lifecycle tied to a resource; no credential management.
+  - User-assigned: reusable identity assignable to multiple resources.
+- Tokens & lifetime: access tokens (short-lived), refresh tokens (if applicable); use MSAL libraries for token acquisition and caching.
+- Advanced identity controls: Conditional Access (MFA, location/device-based), Identity Protection (risk detections), and Privileged Identity Management (PIM) for just-in-time elevation.
 
-### Lab 0.2 — Create resource group, VM, storage account (CLI + PowerShell + Portal)
-Goal: create resource group and two resources (VM and Storage), verify, then clean up.
+### RBAC and governance
+- RBAC model: role definitions (set of permissions), role assignments (who/what, scope), and scopes (subscription, resource group, resource).
+- Built-in roles vs custom roles: use built-in for common needs; create custom roles for narrow least-privilege needs.
+- Scoped assignments: prefer assigning at resource group level to reduce sprawl; prefer groups over individuals.
+- Deny assignments & policy: Azure Policy enforces configuration compliance (deny, audit, append, deployIfNotExists). Use initiatives to group policies.
+- Management groups: organize subscriptions for inheritance of policies and controls.
 
-Variables (PowerShell):
-```powershell
-$rg = 'rg-fundamentals'
-$location = 'eastus'
-$vmName = 'demoVM'
-$saName = ('fundamentalsa' + (Get-Random -Maximum 10000))
+### Security controls and data protection
+- Network security: NSGs, Azure Firewall, WAF, DDoS Protection Standard, Private Endpoints.
+- Secrets management: Key Vault for keys, secrets, certificates; integrate with managed identities for retrieval.
+- Encryption: storage and DB encryption (TDE), encryption at rest (platform-managed or customer-managed keys), TLS for in-transit.
+- Compliance controls: Azure Blueprints (deprecated in favor of initiatives/landing zones) and policy-driven guardrails.
 
-az group create --name $rg --location $location
-```
+### Observability: monitoring, logging and tracing
+- Azure Monitor: metrics, alerts, autoscale rules.
+- Log Analytics (Workspace): central store for logs and queryable via Kusto Query Language (KQL).
+- Application Insights: telemetry for application performance, distributed tracing, and exception tracking.
+- Best practices: instrument code (traces, metrics), set sensible retention and alerts, create dashboards for runbook visibility.
 
-Create VM (Azure CLI):
-```powershell
-# Ensure SSH key exists
-if (-not (Test-Path "$env:USERPROFILE\\.ssh\\id_rsa.pub")) { ssh-keygen -t rsa -b 4096 -f "$env:USERPROFILE\\.ssh\\id_rsa" -N "" }
+### Backup, disaster recovery, and business continuity
+- Backup solutions: Recovery Services vault for VM and workload backups; database PITR for managed DBs.
+- Replication & failover: geo-replication for storage and DBs; ASR (Azure Site Recovery) for VM replication and orchestrated failover.
+- RTO/RPO planning: align backup frequency and replication to business requirements; test restores regularly.
 
-az vm create --resource-group $rg --name $vmName --image UbuntuLTS --admin-username azureuser --ssh-key-value "$env:USERPROFILE\\.ssh\\id_rsa.pub"
-az vm open-port --resource-group $rg --name $vmName --port 22
-az vm list-ip-addresses --name $vmName -g $rg -o table
-```
+### Cost management and optimization (deep)
+- Pricing models: pay-as-you-go, reserved capacity (1/3 year), spot instances, savings plans where available.
+- Cost governance:
+  - Tagging strategy: enforce required tags (cost-center, owner, environment) via policy.
+  - Budgets & alerts: detect overspend and notify owners.
+  - Rightsizing: use Advisor recommendations, monitor utilization, and downsize or change SKUs.
+- Storage cost patterns: move cold data to archive, use lifecycle management policies.
 
-Create Storage account (Azure CLI):
-```powershell
-az storage account create --name $saName --resource-group $rg --location $location --sku Standard_LRS --kind StorageV2
-# Get a key
-$key = az storage account keys list -g $rg -n $saName --query "[0].value" -o tsv
-az storage container create --account-name $saName --name demo --account-key $key
-az storage blob upload --account-name $saName --container-name demo --name hello.txt --file README.md --account-key $key
-az storage blob list --account-name $saName --container-name demo --account-key $key -o table
-```
+### IaC, CI/CD and operational practices
+- IaC choices: Bicep/ARM (native), Terraform (multi-cloud). Store templates in Git and review changes via pull requests.
+- CI/CD: use GitHub Actions, Azure Pipelines to validate templates (`bicep build`, `az deployment validate`) and apply deployments with service principals or managed identities.
+- Environment promotion: keep separate state for dev/test/prod; use parameterization and secure secrets in Key Vault.
 
-Azure PowerShell equivalents (examples):
-```powershell
-New-AzResourceGroup -Name $rg -Location $location
-New-AzVM -ResourceGroupName $rg -Name $vmName -Location $location -Image 'UbuntuLTS' -Credential (Get-Credential)
-New-AzStorageAccount -ResourceGroupName $rg -Name $saName -SkuName Standard_LRS -Kind StorageV2 -Location $location
-```
+### Common design patterns and anti-patterns
+- Patterns: circuit breaker, queue-based load leveling, bulkhead isolation, green/blue or canary deployments, immutable infrastructure.
+- Anti-patterns: monolithic stateful apps in single VM, excessive permission grants, lack of telemetry, manual-only deployments.
 
-Portal: Use the Portal to inspect the resources, check Networking -> NIC -> Effective security rules, and view storage account properties.
-
-Validation:
-- SSH to VM public IP (from `az vm list-ip-addresses`).
-- In Portal, confirm VM and storage exist in resource group and check tags and locks.
-
-Cleanup (remove everything):
-```powershell
-az group delete --name $rg --yes --no-wait
-```
-
-### Lab 0.3 — Bicep: declarative deploy (validate & deploy)
-`storage.bicep` (example):
-```bicep
-param location string = resourceGroup().location
-param storageName string
-
-resource sa 'Microsoft.Storage/storageAccounts@2021-09-01' = {
-  name: storageName
-  location: location
-  sku: { name: 'Standard_LRS' }
-  kind: 'StorageV2'
-}
-
-output storageId string = sa.id
-```
-
-Deploy (validate first):
-```powershell
-bicep build .\\storage.bicep
-az deployment group validate --resource-group $rg --template-file .\\storage.bicep --parameters storageName=$saName
-az deployment group create --resource-group $rg --template-file .\\storage.bicep --parameters storageName=$saName
-```
-
-Validation: check deployment in Portal -> Resource groups -> Deployments and view outputs.
+### Learning path & recommended sequence
+1. Core concepts: cloud models, deployment models, and Azure organizational constructs.
+2. Identity & RBAC: app registrations, service principals, managed identities, PIM.
+3. Networking & security: VNets, NSGs, Private Endpoints, Firewall.
+4. Compute & storage: VMs, VMSS, AKS, storage tiers and redundancy.
+5. Databases & analytics: Azure SQL, Cosmos DB, Synapse, ADLS Gen2.
+6. Observability & operations: Monitor, Log Analytics, App Insights, runbooks.
+7. Governance & cost: Policy, management groups, tagging, budgets, reservations.
 
 ---
 
-## Identity & RBAC — practical details and examples
+## References & further reading
+- Azure architecture center: https://learn.microsoft.com/azure/architecture/
+- Azure Well-Architected Framework: https://learn.microsoft.com/azure/architecture/framework/
+- Azure networking docs: https://learn.microsoft.com/azure/networking
+- Azure security docs: https://learn.microsoft.com/azure/security
+- Azure cost management: https://learn.microsoft.com/azure/cost-management
+
+### Architecture diagram (visual)
+
+![End-to-end architecture](./module_00_architecture.svg)
+
+## Appendix — Cheat sheet (concepts & key commands)
+
+Quick conceptual reminders
+- IaaS: VM-level control; you manage OS and middleware.
+- PaaS: platform-managed; you deploy code and config.
+- SaaS: consumed application; minimal operational burden.
+- VNet: virtual network; subnets segment workloads; NSGs control traffic.
+- Managed identity: resource-assigned identity; avoids credential management.
+
+Azure CLI (common commands)
+```
+az account show
+az group create --name <rg> --location <location>
+az vm create --resource-group <rg> --name <vm> --image UbuntuLTS --admin-username <user> --ssh-key-value <pubkey>
+az storage account create -n <sa> -g <rg> -l <location> --sku Standard_LRS
+az role assignment create --assignee <principalId> --role Reader --resource-group <rg>
+az policy definition create --name <name> --rules ./policy.json --mode All
+az deployment group create --resource-group <rg> --template-file ./template.json --parameters @params.json
+```
+
+Azure PowerShell equivalents (examples)
+```
+Connect-AzAccount
+New-AzResourceGroup -Name <rg> -Location <location>
+New-AzVM -ResourceGroupName <rg> -Name <vm> -Image "UbuntuLTS" -Credential (Get-Credential)
+New-AzStorageAccount -ResourceGroupName <rg> -Name <sa> -SkuName Standard_LRS -Kind StorageV2 -Location <location>
+New-AzRoleAssignment -ObjectId <principalId> -RoleDefinitionName Reader -Scope "/subscriptions/<sub>/resourceGroups/<rg>"
+```
+
+Quick policy & tagging patterns
+- Enforce tag requirements with policy (audit/deny) and use initiatives for groupings.
+- Deny public blob access policy snippet (see body above).
+
+Observability quick checks
+- Check VM health: az vm get-instance-view -g <rg> -n <vm>
+- Query logs: go to Log Analytics workspace and use KQL: `AzureDiagnostics | where TimeGenerated > ago(1h)`
+
+Cleanup reminder
+- To remove sandbox resources quickly: `az group delete --name <rg> --yes --no-wait` (removes everything in the RG).
+
 
 Service principal (SP) example (CLI) — for automation:
 ```powershell
