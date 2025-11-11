@@ -2,6 +2,163 @@
 
 This module covers compute options (VMs, VM Scale Sets, PaaS), storage choices and performance characteristics, and networking building blocks (vNets, NSGs, routing, peering, hybrid connectivity). The content moves from concepts to deep operational details, performance considerations, and architecture decisions you will need as an engineer or architect.
 
+## Learning outcomes
+
+- Choose appropriate compute SKUs and storage types for a workload and justify the decision by cost/performance trade-offs.
+- Design simple hub-and-spoke networks and implement secure connectivity patterns (Private Endpoints, Firewall).
+- Deploy and operate VMSS with health probes, autoscale and update strategies.
+- Use Azure Monitor and Network Watcher to validate architecture and troubleshoot connectivity/performance.
+
+## Table of contents
+- Compute: options, VM details, VMSS, placement and proximity
+- Storage: account types, disk types, blob/file/NFS, performance & redundancy
+- Networking: vNet fundamentals, NSG/ASG, UDRs, peering, load balancers, Application Gateway, Azure Firewall, hybrid connectivity
+- Advanced operational topics: monitoring, backup, encryption, cost trade-offs
+- Hands-on labs and validation
+
+---
+
+## Compute (detailed)
+
+### High-level decision guide
+- IaaS (VMs): full OS control, legacy app lift-and-shift, stateful workloads where you manage OS and patching.
+- PaaS (App Service, Azure SQL): remove OS maintenance and let platform provide HA and backups.
+- Containers/AKS: for modern microservices where orchestration, scaling and CI/CD are needed.
+
+### VM families and sizing
+- General purpose: D-series (balanced CPU/memory).
+- Memory optimized: E-series.
+- Storage optimized: Lsv2 (high disk throughput).
+- GPU: NC, ND (AI and graphics workloads).
+
+Sizing checklist:
+- Estimate CPU, memory and disk IOPS/throughput.
+- Consider ephemeral OS disk for stateless instances and faster performance.
+
+### Managed disks and storage
+- Disk types: Standard HDD, Standard SSD, Premium SSD, Premium SSD v2, Ultra.
+- Disk caching: ReadOnly for data disks where appropriate; ReadWrite for workloads needing write caching (careful with data durability).
+
+### Availability constructs
+- Availability Sets: spread across Update Domains (UD) and Fault Domains (FD) — older model for single-region resiliency.
+- Availability Zones: replicate services across physical datacenters; use for higher resiliency.
+- VM Scale Sets (VMSS): manage pools of identical (or flexible) VMs; supports autoscale, health probes, and custom images.
+
+### Autoscale & upgrade strategies
+- Autoscale based on metrics (CPU, memory via custom metric, queue length). Use cooldown windows and scale-in protection to avoid churning.
+- Upgrade policy: Rolling or Manual is recommended for production to control patch and image updates.
+
+---
+
+## Storage (detailed)
+
+### Storage account kinds and when to use
+- StorageV2 (general-purpose v2): default for most workloads.
+- Blob Storage (specialized): choose when blob-only features or cost structure fits.
+
+### Blob types and lifecycle
+- Block blobs for general objects; Append for logs; Page blobs underlie managed disks.
+- Lifecycle policies: move to Cool/Archive based on access patterns; configure immutability (WORM) for compliance.
+
+### Redundancy & replication
+- LRS: cheap, local copies — susceptible to datacenter failure.
+- ZRS: cross-zone replication inside a region.
+- GRS/RA-GRS: asynchronous cross-region replication; RA-GRS allows read access to the secondary.
+
+### Storage performance and best practices
+- Match disk type to workload (IOPS/throughput). Monitor via metrics and run fio/DiskSpd for validation.
+- For high throughput, stripe disks or use premium offerings.
+
+---
+
+## Networking (detailed)
+
+### vNet and subnets
+- Plan non-overlapping CIDRs for the estate and reserve blocks for future expansions.
+- Subnet design: separate app, data, mgmt subnets; place gateways/firewalls in dedicated subnets.
+
+### NSGs, ASGs, and service tags
+- NSG rules are evaluated by priority; use service tags to allow platform services without constantly updating IPs.
+- ASGs let you group NICs and apply NSG rules to an application tier logically.
+
+### Peering, hub-and-spoke and transit
+- vNet peering is low-latency and high-bandwidth but non-transitive. Use a hub for centralized services (firewall, DNS, bastion).
+- Virtual WAN and Transit Hub are alternatives for multi-region transit.
+
+### Private connectivity
+- Service Endpoints vs Private Endpoints: prefer Private Endpoint for private IP connectivity to PaaS resources.
+
+### Load balancing and application delivery
+- Azure Load Balancer: L4, for TCP/UDP workloads. Standard SKU supports zone redundancy.
+- Application Gateway: L7, WAF support, end-to-end TLS with certificate management.
+- Front Door: global edge routing for HTTP(s) and WAF at perimeter.
+
+---
+
+## Advanced operational topics
+
+- Monitoring: collect metrics and diagnostics to Log Analytics; use Application Insights for app telemetry.
+- Backup: use Recovery Services vaults for VM backups; plan retention and backup frequency.
+- Encryption: platform-managed by default; customer-managed keys in Key Vault for stricter control.
+- Cost: use tagging, budgets, reservation recommendations and auto-shutdown for dev/test.
+
+---
+
+## Hands-on labs and validation (examples)
+
+- Lab 1.1 — Deploy a VMSS + Standard LB: build a VMSS with a Standard Load Balancer, configure HTTP probe and autoscale on CPU. Validate scale-out by running a stress script.
+- Lab 1.2 — Storage replication experiment: create a ZRS and RA-GRS account; copy sample dataset and measure read-after-failover behavior.
+- Lab 1.3 — Hub-and-spoke: use `hub_spoke.bicep` to deploy a hub and two spokes, configure peering, and validate traffic flow using `az network watcher connection-troubleshoot`.
+
+Validation commands (examples):
+```powershell
+# VMSS: instance view
+az vmss get-instance-view --name webvmss --resource-group rg-demo
+
+# Autoscale rules
+az monitor autoscale list --resource-group rg-demo --query "[?contains(name,'webvmss')].{name:name,profiles:profiles}"
+
+# Storage: show replication and endpoints
+az storage account show -n <saName> -g rg-demo --query "{sku:sku.name,kind:kind,primaryEndpoints:primaryEndpoints}"
+
+# Network: check effective routes
+az network nic show-effective-route-table --resource-group rg-demo --nic-name nic1
+```
+
+---
+
+## Troubleshooting & operational playbook
+
+Common issues:
+- VM not reachable: check NSG, effective route table, UDR that routes traffic to an NVA, and Network Security groups at NSG & NIC level.
+- LB health probe failing: verify probe endpoint on VM, firewall/NSG allowing probe source IPs, and application binding.
+- Storage latency: check disk metrics, VM size limitations, and consider striping or using premium disks.
+
+Useful tools:
+- Network Watcher (IP flow verify, packet capture, connection troubleshoot).
+- Azure Monitor and Log Analytics (custom queries for failed health probes, autoscale events).
+
+---
+
+## Interview & design tips
+
+- Always start by clarifying RPO/RTO and traffic patterns before choosing replication and HA options.
+- For stateless front ends: VMSS across zones + Standard LB. For stateful DBs: prefer managed PaaS with zone redundancy or geo-replication.
+
+Sample questions to practice:
+- Design a globally available web app with sub-100ms failover. Which services would you pick and why?
+- How would you handle database latency when replicating across regions?
+
+---
+
+## References
+- VM sizes & series: https://learn.microsoft.com/azure/virtual-machines/sizes
+- Storage performance checklist: https://learn.microsoft.com/azure/storage/common/storage-performance-checklist
+- Azure networking documentation: https://learn.microsoft.com/azure/networking
+# Module 1 — Core Compute, Storage, and Networking (Basics → Advanced)
+
+This module covers compute options (VMs, VM Scale Sets, PaaS), storage choices and performance characteristics, and networking building blocks (vNets, NSGs, routing, peering, hybrid connectivity). The content moves from concepts to deep operational details, performance considerations, and architecture decisions you will need as an engineer or architect.
+
 ## Table of contents
 - Compute: options, VM details, VMSS, placement and proximity
 - Storage: account types, disk types, blob/file/NFS, performance & redundancy

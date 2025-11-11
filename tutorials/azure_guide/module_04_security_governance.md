@@ -1,49 +1,122 @@
 # Module 4 — Security & Governance (Foundations → Advanced)
 
-Scope: Azure Policy, RBAC, management groups, Key Vault, security center, identity protection, network security, compliance frameworks and continuous compliance.
+Scope: Azure Policy, RBAC, management groups, Key Vault, Defender for Cloud, identity protection, network security, compliance frameworks and continuous compliance.
 
-Learning objectives
-- Implement management group hierarchy and inherit policies and role assignments.
-- Author custom policies and compose initiatives for baseline compliance.
-- Use Key Vault for secrets and keys; integrate with managed identities.
-- Harden network and platform using Azure Firewall, WAF, NSGs, and private endpoints.
+## Learning objectives
 
-Advanced topics
-- DeployIfNotExists remediations and resource graph-driven remediation strategies.
-- Policy exemptions, guest configuration, and guest attestation (Enable remote configuration management).
-- Azure Blueprints vs Initiative pipelines for baseline deployments.
-- Continuous compliance: detect drift and remediate automatically using Automation tasks and Managed Identity-run remediation.
+- Design a management-group hierarchy and assign policies and role assignments at scale.
+- Author and test Azure Policy definitions and initiatives, including deployIfNotExists remediation.
+- Implement secrets and key management with Key Vault and integrate with managed identities.
+- Harden networking and platform using Azure Firewall, WAF, NSGs, Private Endpoints and DDoS Protection.
 
-Hands-on labs
-- Lab 4.1: Write a custom policy to enforce allowed VM sizes and create initiative bundling tag and size policies.
-- Lab 4.2: Configure Key Vault with RBAC and an Azure Function that uses a system-assigned managed identity to access a secret.
-- Lab 4.3: Implement an Azure Firewall with threat intelligence and logging to Log Analytics.
+---
 
-Sample policy snippet (deny public IPs in prod):
+## Core concepts (detailed)
+
+### Governance building blocks
+- Management groups: apply policies and RBAC higher in the hierarchy to enforce organization-wide controls.
+- Azure Policy: policy definitions, initiatives (grouped policies), assignments, and policy effects (audit, deny, append, deployIfNotExists).
+- RBAC: scope (subscription, resource group, resource), built-in roles vs custom roles.
+
+### Policy effects and common patterns
+- AuditWhenNotExists / Audit: surface non-compliant resources.
+- Deny: blocks creation of non-compliant resources (use with care).
+- Append: injects properties (tags) into resource during creation.
+- DeployIfNotExists: run remediation ARM template when resource missing (often used to deploy diagnostic settings).
+
+Sample policy — enforce tags (append):
 ```json
 {
-  "if": {
-    "allOf": [
-      { "field": "type", "equals": "Microsoft.Network/publicIPAddresses" },
-      { "field": "location", "equals": "eastus" },
-      { "field": "tags.environment", "equals": "prod" }
-    ]
-  },
-  "then": { "effect": "Deny" }
+  "properties": {
+    "displayName": "Append required tags",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "parameters": {
+      "tagName": { "type": "String" },
+      "tagValue": { "type": "String" }
+    },
+    "policyRule": {
+      "if": { "field": "tags[concat(parameters('tagName'))]", "exists": "false" },
+      "then": { "effect": "append", "details": { "field": "tags[concat(parameters('tagName'))]", "value": "[parameters('tagValue')]" } }
+    }
+  }
 }
 ```
 
-Design checklist
-- Start with audit mode for new policies and move to deny only after sufficient coverage.
-- Use management groups to map policy assignment to organizational units.
-- Protect management access with PIM and MFA; limit permanent role assignments.
-- Monitor compliance via Policy insights and remediate using DeployIfNotExists where possible.
+### Key Vault & secrets management
+- Use RBAC for Key Vault or access policies depending on tenant configuration. Enable soft-delete and purge protection for production.
+- Recommended: store secrets in Key Vault and grant access via managed identities to avoid long-lived credentials.
 
-Study checkpoint
-- Deliverable: packaged initiative JSON (3–5 policies) covering tags, diagnostics, and network baseline; provide test plan for staged roll-out.
+### Defender for Cloud & Secure Score
+- Defender (formerly Security Center) provides posture assessments, recommendations and integrated vulnerability scanning. Use Secure Score to prioritize improvements.
 
-Further reading
-- Azure Policy concepts: https://learn.microsoft.com/azure/governance/policy/
-- Key Vault: https://learn.microsoft.com/azure/key-vault/
+### Network & platform hardening
+- Apply NSGs, Azure Firewall in hub topology, and use Private Endpoints to remove public exposure of PaaS services.
+- DDoS Protection Standard for internet-facing endpoints; WAF on Application Gateway or Front Door for HTTP protections.
 
 ---
+
+## Hands-on labs (practical)
+
+- Lab 4.1 — Policy & Initiative:
+  1. Create a custom policy to deny public IPs for resources tagged `environment=prod`.
+  2. Bundle policies into an initiative: tag enforcement, diagnostics setting enforcement, allowed locations.
+  3. Assign initiative to a management group in audit mode, validate non-compliant resources, then move to deny mode after testing.
+
+- Lab 4.2 — Key Vault integration:
+  1. Create a Key Vault with soft-delete and purge protection enabled.
+  2. Create a system-assigned managed identity on an Azure Function and grant the identity `Key Vault Secrets User` role.
+  3. Demonstrate retrieving a secret from the Function code using the managed identity.
+
+- Lab 4.3 — Firewall & logging:
+  1. Deploy Azure Firewall in hub VNet and create application/network rules for outbound traffic.
+  2. Enable diagnostic settings on Firewall to send logs to Log Analytics and Storage account.
+
+Example CLI: assign policy (audit)
+```powershell
+az policy assignment create --name 'enforce-tags-audit' --scope /providers/Microsoft.Management/managementGroups/contoso --policy ./policies/enforce-tags.json
+```
+
+Example: deployIfNotExists snippet (diagnostic settings)
+```json
+{
+  "if": { "field": "type", "equals": "Microsoft.Sql/servers" },
+  "then": {
+    "effect": "deployIfNotExists",
+    "details": {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "roleDefinitionIds": ["<role-id>"] ,
+      "deployment": {
+        "properties": {
+          "mode": "incremental",
+          "template": { /* ARM template to deploy diagnostics */ }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Operational playbook & troubleshooting
+
+- Start new policy at Audit mode. Use Policy Insights and `az policy state list` to enumerate non-compliant resources.
+- For DeployIfNotExists failures: check the managed identity used for remediation has correct RBAC and the template parameters are valid.
+- Key Vault access denied: verify Key Vault firewall, network rules, and that the managed identity or service principal has a role or access policy.
+
+---
+
+## Interview & design tips
+
+- Explain phased policy rollout: Audit -> Remediate with DeployIfNotExists -> Enforce (Deny/Append).
+- When designing a landing zone, map policies to management group scopes and document exception processes.
+
+---
+
+## References & tools
+
+- Azure Policy: https://learn.microsoft.com/azure/governance/policy/
+- Key Vault: https://learn.microsoft.com/azure/key-vault/
+- Defender for Cloud: https://learn.microsoft.com/azure/defender-for-cloud/
+
