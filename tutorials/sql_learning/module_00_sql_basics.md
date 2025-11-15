@@ -656,3 +656,175 @@ CREATE TABLE Employees (
 
 ---
 
+
+
+# 🏛️ Core Database Concepts: Data Integrity, Data Redundancy, and More
+
+Understanding these foundational concepts helps you design reliable, efficient, and scalable relational databases.
+
+---
+
+## 🔄 1. **Data Redundancy**
+
+### **What it means**
+
+Data redundancy occurs when **the same data is stored in multiple places** unnecessarily.
+
+### **Example**
+
+A table storing:
+
+| CustomerID | Name | City  | City  |
+| ---------- | ---- | ----- | ----- |
+| 1          | Raj  | Delhi | Delhi |
+
+Or storing customer address in **every order record** even though it doesn’t change.
+
+### **Why redundancy is bad**
+
+* ❌ Wastes storage
+* ❌ Causes inconsistency
+* ❌ Makes updates harder
+* ❌ Increases maintenance
+
+### **How it is avoided**
+
+➡️ **Normalization**
+➡️ Proper relational table design
+➡️ Use of **foreign keys** instead of duplicating data
+
+---
+
+## 🔐 2. **Data Integrity**
+
+Data Integrity ensures that **data is accurate, consistent, and reliable** throughout its lifecycle.
+
+There are **four major types**:
+
+---
+
+### **a) Entity Integrity**
+
+Every table must have a **unique primary key**.
+
+✔ Ensures each row is unique
+✔ Avoids duplicate records
+
+---
+
+### **b) Referential Integrity**
+
+Relationships between tables must remain valid.
+
+✔ Achieved using **foreign keys**
+✔ Prevents inserting a child row without a parent
+✔ Prevents deleting a parent if child records still exist
+
+**Example**
+Cannot insert an order with `CustomerID = 999` if that customer doesn’t exist.
+
+---
+
+### **c) Domain Integrity**
+
+Values must fall within a valid range or format.
+
+✔ Enforced using:
+
+* Data types
+* CHECK constraints
+* Default values
+* NOT NULL
+
+**Example:**
+
+* Age must be > 0
+* Email must be non-null
+* Salary must be DECIMAL
+
+---
+
+### **d) User-Defined Integrity**
+
+Rules specific to a business.
+
+**Example:**
+
+* Discount cannot exceed 50%
+* Employees must belong to a valid department
+* EndDate cannot be earlier than StartDate
+
+---
+
+## 🧺 3. **Data Consistency**
+
+Data should remain **correct, stable, and uniform** across the system.
+
+If one part of the database is updated, all related data should reflect that change.
+
+### Example:
+
+If an order total is updated in the `orders` table, the `payments` table must reflect the same value.
+
+---
+
+## 🧱 4. **Data Normalization**
+
+Normalization is the process of **organizing tables to reduce redundancy and improve integrity**.
+
+Common normal forms:
+
+* **1NF:** No repeating groups; atomic values
+* **2NF:** No partial dependency
+* **3NF:** No transitive dependency
+
+Normalization ensures:
+✔ Less redundancy
+✔ More consistency
+✔ Efficient storage
+
+---
+
+## 🧩 5. ACID Properties (Important for Data Integrity)
+
+ACID guarantees safe transaction processing:
+
+| Property            | Meaning                           | Benefit                    |
+| ------------------- | --------------------------------- | -------------------------- |
+| **A – Atomicity**   | All or nothing                    | Avoids partial updates     |
+| **C – Consistency** | DB always in a valid state        | Prevents corruption        |
+| **I – Isolation**   | Parallel transactions don’t clash | Reliable multi-user access |
+| **D – Durability**  | Data is saved even on failure     | Crash-proof                |
+
+---
+
+## 🗂️ 6. Data Anomalies (Happen When Integrity Is Poor)
+
+If a database is not normalized, anomalies occur:
+
+### **Insertion anomaly**
+
+Cannot insert a record because other fields are missing.
+
+### **Update anomaly**
+
+Updating data in one place but forgetting another.
+
+### **Deletion anomaly**
+
+Deleting one row removes important unrelated data.
+
+---
+
+# ✔️ Summary Table
+
+| Concept             | Meaning                                | Why It Matters                     |
+| ------------------- | -------------------------------------- | ---------------------------------- |
+| **Data Redundancy** | Same data stored multiple times        | Wastes space, causes inconsistency |
+| **Data Integrity**  | Accuracy & correctness of data         | Reliable database                  |
+| **Consistency**     | Uniform and correct data state         | Error-free queries                 |
+| **Normalization**   | Organizing tables to reduce redundancy | Better design                      |
+| **ACID**            | Safe transaction properties            | Ensures reliability                |
+
+---
+
