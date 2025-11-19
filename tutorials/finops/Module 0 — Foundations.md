@@ -214,14 +214,14 @@ Goal: *“Show where money is going.”*
 
 Activities:
 
-* Tagging strategy
-* Cost allocation
-* Shared cost modeling
-* Budgeting
-* Unit economics
-* Forecasting
-* Usage data export
-* Cloudability integration
+* Tagging strategy  -   A structured approach for labeling cloud resources using tags (e.g., CostCenter=Finance, Env=Prod).
+* Cost allocation   -   Process of assigning cloud spend to the right teams, applications, environments, or business units.
+* Shared cost modeling  -   Method of distributing costs for shared infrastructure (e.g., VPN gateways, firewalls, hub networks). Approaches: proportional allocation, fixed percentage, usage-based.
+* Budgeting -   Defining spending limits per team, application, or environment.
+* Unit economics    -   Measuring cost efficiency in meaningful business units. Ex: cost per user, cost per API call, cost per VM hour, cost per environment
+* Forecasting   -   Predicting future cloud spend based on historical trends, usage patterns, and upcoming changes.
+* Usage data export -   Exporting raw consumption and cost data from Azure (or other clouds) into tools like:Azure Cost Management exports, Storage accounts, Data Lake, Storage accounts, Data Lake
+* Cloudability integration  -   Connecting Azure billing data to Apptio Cloudability to enrich cost visibility.
 
 Outputs:
 
@@ -237,15 +237,15 @@ Goal: *“Get the best value for money.”*
 
 Activities:
 
-* Rightsizing workloads
-* Scaling policies
-* Optimize data transfer
-* Optimize storage
-* Reservation purchases (1Y/3Y)
-* Savings Plans
-* Spot workloads
-* Deleting unused resources
-* Architectural improvements
+* Rightsizing workloads -   Adjusting compute, storage, and database resources to match actual usage.
+* Scaling policies  -   Implementing autoscaling rules that grow or shrink capacity based on demand.
+* Optimize data transfer    -   Reducing network egress fees by optimizing communication patterns
+* Optimize storage  -   Choosing correct storage tiers and eliminating unused volumes.
+* Reservation purchases (1Y/3Y) -   Commitment-based discounts for predictable workloads.
+* Savings Plans -   Flexible commitment to compute spend instead of specific VM types.
+* Spot workloads    -   Using surplus Azure capacity at deep discounts (up to 90%).
+* Deleting unused resources -   Systematically identifying and removing unused or idle cloud assets.
+* Architectural improvements    -   Re-designing systems to be inherently cost-efficient.
 
 Outputs:
 
@@ -261,13 +261,13 @@ Goal: *“Create processes and governance to manage cost at scale.”*
 
 Activities:
 
-* Governance via policy
-* Continuous cost monitoring
-* Monthly FinOps reviews
-* KPI reporting
-* Budget enforcement
-* Team accountability
-* Process automation
+* Governance via policy -   Establishing rules to enforce compliant and cost-efficient cloud usage.
+* Continuous cost monitoring    -   Daily or weekly monitoring of usage, anomalies, and budget trends.
+* Monthly FinOps reviews    -   Regular reviews with engineering, product, and finance teams.
+* KPI reporting -   Tracking metrics that measure financial performance of cloud usage.
+* Budget enforcement    -   Ensuring no one exceeds approved spending limits.
+* Team accountability   -   Assigning spend ownership to each product/service/team.
+* Process automation    -   Automating repetitive FinOps workflows so cost control scales.
 
 Outputs:
 
