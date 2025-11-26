@@ -2164,3 +2164,1263 @@ By completing Module 2, you gain expertise in:
 
 ---
 
+# 🐳 **Section 12 — Container & Kubernetes Cost Optimization**
+
+Containers and Kubernetes (AKS) present unique cost challenges. Unlike traditional VMs, workloads are dynamic, ephemeral, and share infrastructure. Without proper optimization, AKS costs can spiral quickly.
+
+---
+
+## 🎯 **12.1 AKS Cost Structure**
+
+### **What You Pay For:**
+
+**1. Node Pool VMs**
+- VM SKU costs (D-series, E-series, etc.)
+- OS disk (managed disk charges)
+- Ephemeral disks (temp storage)
+
+**2. Managed Control Plane**
+- Standard tier: ~$0.10/hour per cluster
+- Free tier: No control plane cost (limited SLA)
+
+**3. Load Balancers**
+- Standard LB: ~$0.025/hour + data processing
+- Public IPs: ~$0.005/hour per IP
+
+**4. Storage**
+- Persistent Volumes (PVs): Managed disk costs
+- Azure Files/Blob: Storage account costs
+
+**5. Networking**
+- Inbound traffic: Free
+- Outbound traffic: ~$0.087/GB (first 5GB free)
+- VNet peering: ~$0.01/GB
+
+**6. Container Registry (ACR)**
+- Basic: $0.167/day
+- Standard: $0.667/day
+- Premium: $1.667/day
+
+---
+
+## 🧮 **12.2 AKS Rightsizing Strategies**
+
+### **Strategy 1: Node Pool Optimization**
+
+**Problem:** Overprovisioned node pools waste money
+
+**Solution:**
+
+**Use Autoscaling:**
+```yaml
+apiVersion: v1
+kind: Cluster
+metadata:
+  name: my-aks-cluster
+spec:
+  agentPoolProfiles:
+  - name: nodepool1
+    count: 3
+    minCount: 2
+    maxCount: 10
+    enableAutoScaling: true
+    vmSize: Standard_D4s_v3
+```
+
+**Benefits:**
+- Scales down during low usage (nights, weekends)
+- Scales up during peak demand (business hours, campaign launches)
+- Saves 40-60% on idle capacity
+- No manual intervention required
+
+**Azure Portal Steps:**
+1. Navigate to AKS cluster → Node pools
+2. Select node pool → Enable autoscaling
+3. Set min/max node counts
+4. Configure scale settings
+5. Save and monitor scaling behavior
+
+**Choose Right VM SKU:**
+| Workload Type | Recommended SKU | Why |
+|---------------|----------------|------|
+| General-purpose | Standard_D2s_v3 | Balanced CPU/Memory |
+| CPU-intensive | Standard_F4s_v2 | High CPU ratio |
+| Memory-intensive | Standard_E4s_v3 | High memory ratio |
+| Batch/spot workloads | Standard_D4s_v3 Spot | 70-90% discount |
+
+---
+
+### **Strategy 2: Spot Node Pools**
+
+**Use Case:** Non-critical batch jobs, CI/CD, dev/test
+
+**Implementation:**
+```bash
+az aks nodepool add \
+  --resource-group myResourceGroup \
+  --cluster-name myAKSCluster \
+  --name spotnodepool \
+  --priority Spot \
+  --eviction-policy Delete \
+  --spot-max-price -1 \
+  --enable-cluster-autoscaler \
+  --min-count 1 \
+  --max-count 5 \
+  --node-vm-size Standard_D4s_v3
+```
+
+**Pod Configuration:**
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: batch-job
+spec:
+  tolerations:
+  - key: "kubernetes.azure.com/scalesetpriority"
+    operator: "Equal"
+    value: "spot"
+    effect: "NoSchedule"
+  nodeSelector:
+    kubernetes.azure.com/scalesetpriority: spot
+```
+
+**Savings:** 70-90% compared to regular nodes
+
+**Best Practices:**
+- Use for batch processing, data analysis, rendering
+- Not suitable for critical user-facing applications
+- Implement retry logic for evicted workloads
+- Monitor spot instance availability in region
+
+---
+
+### **Strategy 3: Pod Resource Requests/Limits**
+
+**Problem:** Pods without resource limits cause overprovisioning
+
+**Understanding Resource Configuration:**
+
+**Resource Requests (Minimum Guarantee):**
+- Amount of CPU/memory guaranteed to pod
+- Used by scheduler to place pod on appropriate node
+- Pod won't start if node lacks requested resources
+- Essential for proper bin-packing
+
+**Resource Limits (Maximum Cap):**
+- Maximum CPU/memory pod can consume
+- Prevents resource hogging
+- CPU is throttled, memory triggers OOM kill if exceeded
+- Protects other pods on same node
+
+**Proper Configuration Example:**
+
+**Without Resources (Bad):**
+- Kubernetes can't make informed scheduling decisions
+- Pods may land on overloaded nodes
+- Risk of noisy neighbor problems
+- Inefficient resource utilization
+
+**With Resources (Good):**
+- Request: 250 milliCPU (0.25 cores), 256 MiB memory
+- Limit: 500 milliCPU (0.5 cores), 512 MiB memory
+- Provides headroom for traffic spikes
+- Scheduler efficiently packs pods onto nodes
+
+**Impact:**
+- Better bin packing (more pods per node)
+- Prevents node overprovisioning
+- Reduces wasted capacity
+- Predictable cost per pod
+
+**Sizing Guidelines:**
+- Monitor actual usage with Azure Monitor
+- Set requests at p50 (median usage)
+- Set limits at p95-p99 (peak usage)
+- Review and adjust monthly
+
+---
+
+## 📊 **12.3 Kubecost Integration**
+
+**What is Kubecost?**
+Open-source cost monitoring tool for Kubernetes. Provides granular visibility into:
+- Pod-level costs
+- Namespace costs
+- Deployment costs
+- Idle resource waste
+
+### **Installing Kubecost on AKS**
+
+**Installation Methods:**
+
+**Method 1: Helm Chart (Recommended)**
+1. Add Kubecost Helm repository
+2. Create kubecost namespace
+3. Install Kubecost with Helm
+4. Configure Azure integration for accurate pricing
+5. Access via kubectl port-forward or ingress
+
+**Method 2: Azure Marketplace**
+1. Search for Kubecost in Azure Marketplace
+2. Deploy directly to AKS cluster
+3. Preconfigured for Azure pricing
+4. Managed updates available
+
+**Method 3: Kubernetes Manifests**
+1. Download YAML manifests from Kubecost
+2. Apply to cluster with kubectl
+3. Manual configuration required
+4. More control over deployment
+
+**Access Methods:**
+- Port-forward: Temporary local access
+- LoadBalancer service: External access with public IP
+- Ingress: Integrate with existing ingress controller
+- Azure Front Door: Enterprise-grade access with WAF
+
+
+
+Access: `http://localhost:9090`
+
+### **Key Kubecost Metrics**
+
+**1. Cluster Efficiency Score**
+- Measures CPU/memory utilization
+- Target: >60% efficiency
+
+**2. Idle Cost**
+- Unused CPU/memory capacity
+- Directly eliminable waste
+
+**3. Cost per Namespace**
+```
+Namespace         | Monthly Cost | % of Total
+------------------|--------------|------------
+production        | $4,200       | 65%
+staging           | $1,500       | 23%
+development       | $800         | 12%
+```
+
+**4. Cost per Deployment**
+```
+Deployment        | Pods | CPU | Memory | Monthly Cost
+------------------|------|-----|--------|-------------
+frontend          | 5    | 2.5 | 8 GB   | $450
+backend-api       | 3    | 1.5 | 6 GB   | $320
+worker-queue      | 2    | 1.0 | 4 GB   | $180
+```
+
+---
+
+## 💰 **12.4 AKS Cost Optimization Checklist**
+
+### **Node-Level Optimizations**
+- [ ] Enable cluster autoscaler
+- [ ] Use Spot node pools for batch workloads
+- [ ] Choose cost-effective VM SKUs
+- [ ] Use ephemeral OS disks (no extra disk cost)
+- [ ] Consolidate small clusters (reduce control plane cost)
+
+### **Pod-Level Optimizations**
+- [ ] Set resource requests and limits on all pods
+- [ ] Use Horizontal Pod Autoscaler (HPA)
+- [ ] Use Vertical Pod Autoscaler (VPA) for rightsizing
+- [ ] Implement Pod Disruption Budgets (PDB)
+- [ ] Schedule batch jobs during off-peak hours
+
+### **Storage Optimizations**
+- [ ] Use Standard SSD for non-critical PVs
+- [ ] Implement PV lifecycle policies (delete unused)
+- [ ] Use Azure Files with Standard tier
+- [ ] Compress container images
+- [ ] Use ACR Basic tier for dev/test
+
+### **Networking Optimizations**
+- [ ] Use internal load balancers where possible
+- [ ] Minimize external traffic (reduce egress cost)
+- [ ] Use Azure CDN for static content
+- [ ] Implement ingress controllers (NGINX/Traefik)
+- [ ] Consolidate public IPs
+
+### **Monitoring & Governance**
+- [ ] Install Kubecost for cost visibility
+- [ ] Set namespace quotas
+- [ ] Implement Pod Security Policies
+- [ ] Tag resources for cost allocation
+- [ ] Create cost budgets per namespace
+
+---
+
+## 🔧 **12.5 Real-World AKS Optimization Example**
+
+### **Scenario:**
+E-commerce company running AKS cluster with 50 nodes, monthly cost = $12,000
+
+### **Analysis:**
+
+**Current State:**
+- 50x Standard_D4s_v3 nodes = $6,400/month
+- Load balancer + IPs = $800/month
+- Premium managed disks = $3,200/month
+- ACR Premium = $1,600/month
+- Control plane (Standard) = $72/month
+- Egress traffic = $200/month
+
+**Findings:**
+1. Average node utilization: 35% (65% waste)
+2. 20 nodes idle during nights/weekends
+3. All disks using Premium SSD
+4. ACR Premium overkill for workload
+
+### **Optimization Plan:**
+
+**Action 1: Enable Autoscaling**
+```bash
+az aks nodepool update \
+  --resource-group myRG \
+  --cluster-name myCluster \
+  --name nodepool1 \
+  --enable-cluster-autoscaler \
+  --min-count 15 \
+  --max-count 50
+```
+**Savings:** $2,800/month (scales down to 15 nodes off-peak)
+
+**Action 2: Downgrade Storage**
+- Change Premium SSD → Standard SSD for non-prod PVs
+**Savings:** $1,600/month
+
+**Action 3: Downgrade ACR**
+- Change ACR Premium → Standard
+**Savings:** $1,200/month
+
+**Action 4: Add Spot Node Pool**
+```bash
+az aks nodepool add \
+  --resource-group myRG \
+  --cluster-name myCluster \
+  --name spotnodepool \
+  --priority Spot \
+  --eviction-policy Delete \
+  --spot-max-price -1 \
+  --enable-cluster-autoscaler \
+  --min-count 5 \
+  --max-count 20 \
+  --node-vm-size Standard_D4s_v3
+```
+**Savings:** $1,400/month (migrating batch jobs to spot)
+
+### **Results:**
+- **Before:** $12,000/month
+- **After:** $5,000/month
+- **Savings:** $7,000/month (58% reduction)
+- **Annual Savings:** $84,000
+
+---
+
+# ⚡ **Section 13 — Serverless Cost Optimization**
+
+Serverless computing (Azure Functions, Logic Apps, Container Instances) promises cost efficiency through pay-per-execution pricing. However, misconfiguration can lead to unexpectedly high bills.
+
+---
+
+## 🎯 **13.1 Azure Functions Cost Optimization**
+
+### **Understanding Pricing Plans**
+
+| Plan | Billing Model | Use Case | Cost Range |
+|------|---------------|----------|------------|
+| **Consumption** | Per execution + GB-s | Event-driven, sporadic | $0.20/million executions |
+| **Premium** | Always-on + execution | Low latency, VNet | $150-$500/month |
+| **Dedicated** | App Service Plan | Predictable, high volume | $50-$300/month |
+
+### **Choosing the Right Plan**
+
+**Use Consumption When:**
+- <1 million executions/month
+- Tolerant to cold starts (5-10s)
+- Event-driven workloads
+- Unpredictable traffic patterns
+
+**Use Premium When:**
+- Need VNet integration
+- Require <1s cold start
+- Need always-warm instances
+- High security requirements
+
+**Use Dedicated When:**
+- >10 million executions/month
+- Already have App Service Plan
+- Need extreme performance
+- Predictable 24/7 workload
+
+---
+
+### **Consumption Plan Optimization**
+
+**Technique 1: Optimize Execution Time**
+
+**Problem:** Long-running functions cost more (billed per GB-second)
+
+**Solution:**
+```python
+# Bad: Synchronous processing
+def main(msg: func.QueueMessage):
+    process_large_file()  # Takes 5 minutes
+    send_notification()
+```
+
+```python
+# Good: Async offloading
+def main(msg: func.QueueMessage):
+    queue_batch_job()  # Takes 2 seconds
+    # Actual processing happens in separate batch function
+```
+
+**Savings:** Reduced execution time = lower cost
+
+**Technique 2: Right-Size Memory Allocation**
+
+Default: 1536 MB, but most functions need less
+
+**Check actual usage:**
+```bash
+az monitor metrics list \
+  --resource /subscriptions/{sub}/resourceGroups/{rg}/providers/Microsoft.Web/sites/{function-app} \
+  --metric MemoryWorkingSet \
+  --start-time 2024-01-01T00:00:00Z \
+  --end-time 2024-01-31T23:59:59Z
+```
+
+**Adjust in host.json:**
+```json
+{
+  "version": "2.0",
+  "functionTimeout": "00:05:00",
+  "extensions": {
+    "http": {
+      "routePrefix": "api",
+      "maxOutstandingRequests": 200,
+      "maxConcurrentRequests": 100
+    }
+  },
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "maxTelemetryItemsPerSecond": 5
+      }
+    }
+  }
+}
+```
+
+**Technique 3: Reduce Cold Starts with Warm Instances**
+
+**Problem:** Cold starts consume extra execution time
+
+**Solution (Premium Plan):**
+```bash
+az functionapp plan update \
+  --name myPremiumPlan \
+  --resource-group myRG \
+  --min-instances 2
+```
+
+**Cost vs Benefit:**
+- Premium Plan: $150/month
+- Eliminates cold starts
+- Worth it if >5 million requests/month
+
+---
+
+### **Technique 4: Batch Processing**
+
+**Bad: Individual Processing**
+```python
+# Triggered 1000 times for 1000 messages
+def process_single_message(msg):
+    save_to_db(msg)
+```
+**Cost:** 1000 executions × $0.0000002 = $0.0002
+
+**Good: Batch Processing**
+```python
+# Triggered once for batch of 1000 messages
+def process_batch(messages):
+    save_bulk_to_db(messages)
+```
+**Cost:** 1 execution × $0.0000002 = $0.0000002
+**Savings:** 99.99%
+
+---
+
+## 🔄 **13.2 Logic Apps Cost Optimization**
+
+### **Understanding Pricing**
+
+**Consumption Plan:**
+- Trigger executions: $0.000025/execution
+- Action executions: $0.000125/action
+- Standard connectors: $0.000125/action
+- Enterprise connectors: $0.001/action
+
+**Standard Plan:**
+- Fixed monthly cost: ~$200-$400/month
+- Unlimited executions
+
+### **Optimization Strategies**
+
+**Strategy 1: Reduce Action Count**
+
+**Bad Design:**
+```
+Trigger (HTTP)
+ ├─ Condition 1 (check status)
+ ├─ Condition 2 (check user)
+ ├─ Get User Details (SQL)
+ ├─ Transform Data
+ ├─ Condition 3 (validate)
+ └─ Send Email
+Total: 6 actions per run
+```
+**Cost:** 1000 runs × 6 actions × $0.000125 = $0.75
+
+**Good Design:**
+```
+Trigger (HTTP)
+ ├─ Compose (all conditions in one expression)
+ ├─ HTTP Call (Azure Function with all logic)
+ └─ Send Email
+Total: 3 actions per run
+```
+**Cost:** 1000 runs × 3 actions × $0.000125 = $0.375
+**Savings:** 50%
+
+---
+
+**Strategy 2: Use Sliding Window Instead of Recurrence**
+
+**Bad:**
+```
+Recurrence trigger: Every 5 minutes
+Checks for new items each time
+24 hours = 288 executions/day
+```
+**Cost:** 288 × $0.000025 = $0.0072/day
+
+**Good:**
+```
+Event-driven trigger (Event Grid)
+Only runs when item created
+Actual events: 50/day
+```
+**Cost:** 50 × $0.000025 = $0.00125/day
+**Savings:** 83%
+
+---
+
+**Strategy 3: Avoid Enterprise Connectors When Possible**
+
+**Expensive:**
+- SAP: $0.001/action
+- Salesforce: $0.001/action
+- IBM MQ: $0.001/action
+
+**Cheaper Alternatives:**
+- Use HTTP connectors + API ($0.000125)
+- Use Azure Functions ($0.0000002)
+- Use Service Bus ($0.000125)
+
+**Example:**
+Replace Salesforce connector with HTTP + Salesforce REST API
+**Savings:** 87.5% per action
+
+---
+
+## 🏗️ **13.3 Azure Container Instances (ACI) Cost Optimization**
+
+### **Pricing Model**
+- Per second billing
+- Based on vCPU + memory allocation
+- No charges when stopped
+
+**Pricing:**
+- 1 vCPU: $0.0000012/second ($3.11/month continuous)
+- 1 GB RAM: $0.0000001/second ($0.26/month continuous)
+
+### **Optimization Strategies**
+
+**Strategy 1: Stop When Not Needed**
+```bash
+# Stop container
+az container stop --name mycontainer --resource-group myRG
+
+# Start when needed
+az container start --name mycontainer --resource-group myRG
+```
+**Use Case:** Dev/test environments, batch jobs
+
+**Strategy 2: Right-Size Resources**
+```yaml
+# Bad: Overprovisioned
+apiVersion: 2021-09-01
+properties:
+  containers:
+  - name: myapp
+    properties:
+      resources:
+        requests:
+          cpu: 4.0
+          memoryInGB: 16
+```
+**Cost:** $12.44/day continuous = $373/month
+
+```yaml
+# Good: Right-sized
+apiVersion: 2021-09-01
+properties:
+  containers:
+  - name: myapp
+    properties:
+      resources:
+        requests:
+          cpu: 1.0
+          memoryInGB: 2
+```
+**Cost:** $3.37/day continuous = $101/month
+**Savings:** $272/month (73%)
+
+**Strategy 3: Use Spot Containers**
+```bash
+az container create \
+  --resource-group myRG \
+  --name mycontainer \
+  --image myimage:latest \
+  --cpu 2 \
+  --memory 4 \
+  --priority Spot
+```
+**Savings:** Up to 70% discount
+
+---
+
+# 🌐 **Section 14 — Networking Cost Optimization**
+
+Azure networking services can become expensive, especially with high data transfer volumes, VPN gateways, and ExpressRoute. Understanding pricing models and optimization strategies is crucial.
+
+---
+
+## 💸 **14.1 Data Transfer Costs**
+
+### **Understanding Azure Data Transfer Pricing**
+
+**Inbound Traffic:** FREE (into Azure)
+
+**Outbound Traffic Pricing (from Azure):**
+| Tier | Volume | Price per GB |
+|------|--------|--------------|
+| First 5 GB | 0-5 GB | Free |
+| Next 10 TB | 5 GB - 10 TB | $0.087 |
+| Next 40 TB | 10-50 TB | $0.083 |
+| Next 100 TB | 50-150 TB | $0.070 |
+| Next 350 TB | 150-500 TB | $0.050 |
+| Over 500 TB | 500+ TB | $0.043 |
+
+**Inter-Region Traffic:**
+- Between regions: $0.02/GB (both directions)
+- Same region: Free
+
+**Zone Transfer:**
+- Availability Zone to Zone: $0.01/GB
+
+---
+
+## 🎯 **14.2 Data Transfer Optimization Strategies**
+
+### **Strategy 1: Use Azure CDN**
+
+**Problem:** Serving static content directly from Azure generates egress charges
+
+**Without CDN:**
+```
+100 TB/month outbound = $8,300/month
+```
+
+**With CDN:**
+```
+CDN caches content at edge locations
+Reduces origin requests by 90%
+10 TB outbound + CDN cost = $870 + $500 = $1,370/month
+```
+**Savings:** $6,930/month (83%)
+
+**Implementation:**
+```bash
+# Create CDN profile
+az cdn profile create \
+  --name myCDNProfile \
+  --resource-group myRG \
+  --sku Standard_Microsoft
+
+# Create endpoint
+az cdn endpoint create \
+  --name myEndpoint \
+  --profile-name myCDNProfile \
+  --resource-group myRG \
+  --origin mystorageaccount.blob.core.windows.net \
+  --origin-host-header mystorageaccount.blob.core.windows.net
+```
+
+---
+
+### **Strategy 2: Keep Data in Same Region**
+
+**Bad Architecture:**
+```
+App Service (East US) → SQL Database (West Europe)
+Every query crosses regions = $0.02/GB
+1 TB/month = $20 + latency penalty
+```
+
+**Good Architecture:**
+```
+App Service (East US) → SQL Database (East US)
+All traffic within region = FREE
+```
+**Savings:** $20/month + improved performance
+
+---
+
+### **Strategy 3: Use Private Endpoints**
+
+**Problem:** Public traffic incurs egress charges
+
+**Solution:**
+```bash
+# Create private endpoint for Storage Account
+az network private-endpoint create \
+  --name myPE \
+  --resource-group myRG \
+  --vnet-name myVNet \
+  --subnet mySubnet \
+  --private-connection-resource-id /subscriptions/.../storageAccounts/mystorageaccount \
+  --group-id blob \
+  --connection-name myConnection
+```
+
+**Benefits:**
+- Traffic stays within VNet (no egress charges)
+- Improved security
+- Reduced latency
+
+---
+
+### **Strategy 4: Compress Data**
+
+**Before Compression:**
+```
+API response size: 10 MB
+1 million requests/month = 10 TB egress
+Cost: $870/month
+```
+
+**After Compression (gzip):**
+```
+API response size: 1 MB (90% compression)
+1 million requests/month = 1 TB egress
+Cost: $87/month
+```
+**Savings:** $783/month (90%)
+
+**Implementation (ASP.NET Core):**
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    services.AddResponseCompression(options =>
+    {
+        options.EnableForHttps = true;
+        options.Providers.Add<GzipCompressionProvider>();
+    });
+}
+```
+
+---
+
+## 🔌 **14.3 VPN Gateway & ExpressRoute Optimization**
+
+### **VPN Gateway Pricing**
+
+| SKU | Bandwidth | Price/Month | Use Case |
+|-----|-----------|-------------|----------|
+| Basic | 100 Mbps | $27 | Dev/test |
+| VpnGw1 | 650 Mbps | $140 | Small prod |
+| VpnGw2 | 1 Gbps | $360 | Medium prod |
+| VpnGw3 | 1.25 Gbps | $1,000 | Large prod |
+
+**Optimization:**
+- Use Basic for dev/test environments
+- Delete VPN gateways when not in use
+- Consolidate multiple VPNs into one hub VPN
+
+---
+
+### **ExpressRoute Pricing**
+
+| Plan | Bandwidth | Monthly Cost | Overage Cost |
+|------|-----------|--------------|--------------|
+| Metered | 50 Mbps | $55 + egress | $0.025/GB |
+| Metered | 1 Gbps | $480 + egress | $0.025/GB |
+| Unlimited | 1 Gbps | $5,130 | No egress charges |
+
+**When to Use Unlimited:**
+- If egress >180 TB/month, unlimited is cheaper
+- High data transfer scenarios (backup, replication)
+
+**Optimization:**
+```
+Calculate break-even:
+Metered cost = $480 + (TB × 1024 × $0.025)
+Unlimited cost = $5,130
+
+Break-even: 180 TB/month
+```
+
+---
+
+## 🏗️ **14.4 Load Balancer Cost Optimization**
+
+### **Pricing Comparison**
+
+| Type | Rules | Data Processed | Use Case |
+|------|-------|----------------|----------|
+| **Basic LB** | Free | Free | Dev/test |
+| **Standard LB** | $0.025/hour | $0.005/GB | Production |
+| **App Gateway** | $0.30/hour | $0.008/GB | WAF, SSL |
+
+**Optimization:**
+
+**Use Basic LB for Dev/Test:**
+```bash
+az network lb create \
+  --resource-group myRG \
+  --name myLB \
+  --sku Basic
+```
+
+**Use Standard LB for Production:**
+- Consolidate multiple LBs into one
+- Delete unused LB rules
+- Use internal LB where possible (avoid public IP cost)
+
+---
+
+## 📋 **14.5 Networking Cost Optimization Checklist**
+
+### **Data Transfer**
+- [ ] Implement Azure CDN for static content
+- [ ] Keep resources in same region
+- [ ] Use private endpoints for inter-service communication
+- [ ] Enable compression (gzip/brotli)
+- [ ] Use Azure Front Door for geo-distributed apps
+- [ ] Monitor and alert on egress thresholds
+
+### **VPN/ExpressRoute**
+- [ ] Right-size VPN gateway SKU
+- [ ] Delete unused VPN gateways
+- [ ] Use ExpressRoute Unlimited for >180 TB/month
+- [ ] Consolidate multiple ExpressRoute circuits
+
+### **Load Balancers**
+- [ ] Use Basic LB for non-production
+- [ ] Consolidate multiple Standard LBs
+- [ ] Remove unused LB rules
+- [ ] Use internal LBs where possible
+- [ ] Consider Azure Front Door as alternative
+
+---
+
+# 🌍 **Section 15 — Multi-Region & Disaster Recovery Cost Optimization**
+
+Running workloads across multiple Azure regions improves availability and performance but significantly increases costs. Optimizing multi-region architecture requires careful planning.
+
+---
+
+## 💰 **15.1 Multi-Region Cost Drivers**
+
+### **Key Cost Components:**
+
+**1. Compute Duplication**
+- Running identical infrastructure in 2+ regions
+- Example: 50 VMs × 2 regions = 100 VMs total cost
+
+**2. Data Replication**
+- Storage geo-replication (GRS, GZRS)
+- Database replication (geo-replication, failover groups)
+- Backup replication
+
+**3. Inter-Region Data Transfer**
+- Replication traffic: $0.02/GB
+- Failover traffic spikes
+
+**4. Load Balancing & Traffic Management**
+- Azure Traffic Manager: $0.54/million queries
+- Azure Front Door: $0.30/hour + $0.015/GB
+
+---
+
+## 🎯 **15.2 Cost-Effective DR Strategies**
+
+### **Strategy 1: Active-Passive (Cold Standby)**
+
+**Architecture:**
+- Primary region: Full production workload
+- Secondary region: Infrastructure defined, but shut down
+
+**Cost:**
+- Primary: 100% cost
+- Secondary: ~5-10% cost (storage replication only)
+
+**Use Case:** Low RPO/RTO requirements (hours acceptable)
+
+**Implementation:**
+```bash
+# Infrastructure as Code (Bicep) in DR region
+# Deploy on-demand during disaster
+
+# Start DR environment
+az deployment group create \
+  --resource-group myRG-DR \
+  --template-file dr-template.bicep \
+  --mode Incremental
+```
+
+**Estimated Cost:**
+- Primary region: $10,000/month
+- DR region (cold): $500/month (storage only)
+- **Total:** $10,500/month vs $20,000 for active-active
+
+---
+
+### **Strategy 2: Active-Passive (Warm Standby)**
+
+**Architecture:**
+- Primary region: Full production
+- Secondary region: Scaled-down infrastructure running
+
+**Cost:**
+- Primary: 100%
+- Secondary: 20-30% (smaller VMs, lower scale)
+
+**Use Case:** Medium RPO/RTO (minutes to hour)
+
+**Example:**
+```
+Primary Region:
+- 20x Standard_D4s_v3 VMs
+- Azure SQL Premium tier
+
+DR Region:
+- 5x Standard_D2s_v3 VMs (scaled down)
+- Azure SQL Standard tier
+- Auto-scale on failover
+```
+
+**Cost:**
+- Primary: $10,000/month
+- DR (warm): $2,500/month
+- **Total:** $12,500/month
+
+---
+
+### **Strategy 3: Active-Active (Hot Standby)**
+
+**Architecture:**
+- Both regions handle production traffic
+- Load balanced globally
+
+**Cost:**
+- 2× full infrastructure cost
+
+**Use Case:** Zero downtime requirement, global users
+
+**Implementation:**
+```bash
+# Azure Traffic Manager for global load balancing
+az network traffic-manager profile create \
+  --name myTMProfile \
+  --resource-group myRG \
+  --routing-method Performance \
+  --unique-dns-name mytm
+
+# Add endpoints
+az network traffic-manager endpoint create \
+  --name primary \
+  --profile-name myTMProfile \
+  --resource-group myRG \
+  --type azureEndpoints \
+  --target-resource-id /subscriptions/.../eastus-app
+
+az network traffic-manager endpoint create \
+  --name secondary \
+  --profile-name myTMProfile \
+  --resource-group myRG \
+  --type azureEndpoints \
+  --target-resource-id /subscriptions/.../westeurope-app
+```
+
+**Cost:**
+- Region 1: $10,000/month
+- Region 2: $10,000/month
+- Traffic Manager: $100/month
+- **Total:** $20,100/month
+
+---
+
+## 📊 **15.3 Storage Replication Cost Optimization**
+
+### **Understanding Storage Redundancy Options**
+
+| Option | Copies | Regions | Monthly Cost (1 TB) | Use Case |
+|--------|--------|---------|---------------------|----------|
+| LRS | 3 | 1 | $18 | Dev/test |
+| ZRS | 3 | 1 (multi-zone) | $22 | Production |
+| GRS | 6 | 2 | $36 | DR required |
+| GZRS | 6 | 2 (multi-zone) | $43 | Max availability |
+
+**Optimization:**
+```
+Don't default to GRS for everything!
+
+Dev/Test → LRS (save 50%)
+Non-critical logs → LRS
+Production data → ZRS (same region HA)
+Critical data → GRS only when necessary
+```
+
+---
+
+## 🗃️ **15.4 Database Replication Optimization**
+
+### **Azure SQL Geo-Replication**
+
+**Pricing:**
+- Primary database: Standard cost
+- Geo-replica: 100% of primary cost (full charge)
+
+**Optimization:**
+
+**Option 1: Active Geo-Replication (Expensive)**
+```
+Primary: S3 tier ($445/month)
+Replica: S3 tier ($445/month)
+Total: $890/month
+```
+
+**Option 2: Failover Group with Lower Tier Replica**
+```
+Primary: S3 tier ($445/month)
+Replica: S1 tier ($30/month) - Read-only
+Scale up during failover
+Total: $475/month
+```
+**Savings:** $415/month (47%)
+
+---
+
+### **Cosmos DB Multi-Region**
+
+**Pricing:**
+- Each region: Full RU/s cost
+- Example: 10,000 RU/s × 3 regions = 30,000 RU/s billed
+
+**Optimization:**
+```bash
+# Use lower consistency levels for cost savings
+# Strong consistency requires more RUs
+
+# Bounded staleness or Session consistency
+az cosmosdb create \
+  --name myCosmosDB \
+  --resource-group myRG \
+  --default-consistency-level Session
+```
+
+**Also:**
+- Limit write regions (multi-write is expensive)
+- Use read-only regions for global distribution
+- Scale RU/s per region independently
+
+---
+
+# 🏗️ **Section 16 — Azure Well-Architected Framework: Cost Optimization**
+
+Microsoft's [Well-Architected Framework](https://learn.microsoft.com/azure/well-architected/) provides proven guidance for building cloud solutions. The **Cost Optimization pillar** focuses on maximizing value while minimizing waste.
+
+---
+
+## 🎯 **16.1 Five Principles of Cost Optimization**
+
+### **1. Plan and Estimate Costs**
+- Use Azure Pricing Calculator before deployment
+- Understand TCO (Total Cost of Ownership)
+- Plan for growth and scale
+- Document cost assumptions
+
+### **2. Provision with Optimization in Mind**
+- Choose right-sized services
+- Use PaaS over IaaS where possible
+- Implement auto-scaling
+- Use consumption-based pricing
+
+### **3. Use Monitoring and Analytics**
+- Track spending in real-time
+- Set budgets and alerts
+- Use Azure Advisor recommendations
+- Implement cost allocation with tags
+
+### **4. Maximize Efficiency**
+- Eliminate waste (orphaned resources)
+- Right-size underutilized resources
+- Use reserved instances
+- Implement shutdown schedules
+
+### **5. Continuously Optimize**
+- Regular cost reviews
+- Benchmark against industry standards
+- Adopt FinOps practices
+- Automate optimization
+
+---
+
+## ✅ **16.2 Well-Architected Cost Assessment**
+
+**Use the Assessment Tool:**
+```
+https://learn.microsoft.com/assessments/
+→ Azure Well-Architected Review
+→ Cost Optimization
+```
+
+**Key Questions:**
+- [ ] Do you have a cloud cost management strategy?
+- [ ] Are you using Azure Cost Management + Billing?
+- [ ] Do you have cost allocation tags in place?
+- [ ] Are you using reserved instances?
+- [ ] Do you right-size resources regularly?
+- [ ] Do you have automated shutdown schedules?
+- [ ] Are you monitoring cost anomalies?
+- [ ] Do you have a FinOps team/practice?
+
+---
+
+## 📋 **16.3 Cost Optimization Design Patterns**
+
+### **Pattern 1: Serverless First**
+```
+Replace always-on infrastructure with serverless:
+✖ VM running 24/7 → $75/month
+✔ Azure Functions → $5/month (90% savings)
+```
+
+### **Pattern 2: Scale-to-Zero**
+```
+Non-production environments scale to zero:
+✖ Dev environment 24/7 → $2,000/month
+✔ Dev scale-to-zero (16 hours/day) → $667/month
+```
+
+### **Pattern 3: Tiered Storage**
+```
+Implement lifecycle management:
+Hot tier (0-30 days) → Standard
+Cool tier (31-90 days) → Cool
+Archive tier (90+ days) → Archive
+Savings: 50-80% on aged data
+```
+
+### **Pattern 4: Spot Instances for Batch**
+```
+Use Spot VMs for fault-tolerant workloads:
+✖ Standard D4s_v3 → $140/month
+✔ Spot D4s_v3 → $14-$42/month (70-90% savings)
+```
+
+---
+
+# ✅ **Section 17 — Module 2 Completion Checklist**
+
+## Conceptual Mastery
+- [ ] Understanding of Azure cost drivers across all services
+- [ ] Knowledge of RI/SP optimization strategies
+- [ ] Comprehension of multi-region cost implications
+- [ ] Understanding of serverless pricing models
+- [ ] Knowledge of networking cost structure
+- [ ] Well-Architected Framework cost principles
+
+## Container & Kubernetes Skills
+- [ ] AKS cluster cost analysis
+- [ ] Implemented node autoscaling
+- [ ] Configured Spot node pools
+- [ ] Set pod resource requests/limits
+- [ ] Installed and configured Kubecost
+- [ ] Created namespace cost allocation
+- [ ] Optimized container image sizes
+- [ ] Implemented storage lifecycle policies
+
+## Serverless Optimization
+- [ ] Analyzed Azure Functions consumption vs premium
+- [ ] Optimized function execution time
+- [ ] Reduced Logic Apps action count
+- [ ] Implemented batch processing
+- [ ] Right-sized ACI resource allocation
+- [ ] Configured Spot containers
+
+## Networking Optimization
+- [ ] Implemented Azure CDN for static content
+- [ ] Minimized inter-region data transfer
+- [ ] Configured private endpoints
+- [ ] Enabled compression (gzip/brotli)
+- [ ] Right-sized VPN gateway
+- [ ] Optimized load balancer usage
+- [ ] Monitored egress costs
+
+## Multi-Region & DR
+- [ ] Designed cost-effective DR strategy
+- [ ] Implemented active-passive architecture
+- [ ] Optimized storage redundancy (LRS/ZRS/GRS)
+- [ ] Configured database replication efficiently
+- [ ] Used Traffic Manager for geo-distribution
+- [ ] Documented RPO/RTO vs cost trade-offs
+
+## Governance & Automation
+- [ ] Created Azure Policies for cost control
+- [ ] Implemented tag governance
+- [ ] Configured auto-shutdown schedules
+- [ ] Set up cost anomaly detection
+- [ ] Created cost dashboards
+- [ ] Automated cost reporting
+
+## Hands-On Experience
+- [ ] Completed 10+ real-world optimization scenarios
+- [ ] Identified $50K+ in annual savings
+- [ ] Built automation scripts for cost optimization
+- [ ] Presented cost recommendations to stakeholders
+- [ ] Documented optimization playbooks
+
+---
+
+**Estimated Time to Complete Enhanced Module 2:** 70-90 hours
+
+**Total Hands-On Labs:** 12+ practical exercises
+
+**Expected Savings Identification:** $100K+ annual potential
+
+**Next Step:** Proceed to Module 3 - Cloudability Fundamentals
+
+---
+
+*Module 2 Enhanced: November 2025*
+*Includes: Container optimization, serverless, networking, multi-region DR, Well-Architected Framework*
+
