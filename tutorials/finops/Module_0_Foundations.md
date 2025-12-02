@@ -427,7 +427,146 @@ If your workload:
 | **Memory Optimized**        | More RAM per CPU    | SQL, Redis, analytics          | E-series          |
 | **Heavy Memory DB Servers** | Extremely large RAM | SAP HANA, enterprise DBs       | M-series          |
 
+
 ---
+
+# 🟦 **4. GPU Optimized VMs (Graphics + Compute Acceleration)**
+
+📌 **What it means**
+These VMs come with powerful **NVIDIA GPUs** designed for high-performance workloads such as AI/ML training, deep learning, graphics rendering, and video encoding.
+They provide **massive parallel processing**, which CPUs cannot achieve.
+
+---
+
+📌 **Azure Examples**
+Common GPU VM families:
+
+### **N-series (GPU Accelerated)**
+
+**NC-series** → For compute-heavy ML training & HPC
+
+* Example: **NC6 (1 GPU, K80)**
+  **ND-series** → Deep learning, training large models
+* Example: **ND40rs_v2 (8 GPUs, V100)**
+  **NV-series** → Graphics-intensive workloads (rendering, visualization)
+* Example: **NV12 (1 GPU, M60)**
+  **NCas_T4 / ND A100 v4** → Latest AI-optimized (T4, A100 GPUs)
+
+---
+
+📌 **Why they exist**
+Some workloads need **thousands of parallel cores** — CPUs cannot handle them efficiently. GPUs are built for:
+
+* Training AI/ML and LLMs
+* Real-time inferencing
+* 3D rendering & simulations
+* Video processing
+* Scientific computation
+* High-performance parallel math operations
+
+In short → **GPU = Parallel Power + Speed**
+They reduce job time from *hours → minutes*.
+
+---
+
+📌 **When to use GPU-optimized?**
+Use GPU VMs when workloads require **massive parallel processing**, such as:
+
+### 🔹 **AI / ML / Deep Learning**
+
+* Model training (TensorFlow, PyTorch)
+* Data science workloads
+* Large neural networks
+
+### 🔹 **Graphics & Rendering**
+
+* AutoCAD, Maya, Blender
+* Real-time visualization
+* Game development graphics
+
+### 🔹 **Video Processing**
+
+* Encoding, decoding
+* Video editing at scale
+
+### 🔹 **High-Performance Computing**
+
+* Simulations
+* Mathematical modeling
+* Genomics
+
+---
+
+# 🟥 **5. General Purpose VMs (Balanced CPU, RAM, and Storage)**
+
+📌 **What it means**  
+General Purpose VMs offer a **balanced ratio** of CPU, RAM, and storage.  
+They are designed for **most common workloads** that don’t need extra high memory or GPU or heavy compute power.
+
+These VMs are cost-effective and versatile — the default choice for many applications.
+
+---
+
+📌 **Azure Examples**
+
+### **D-series → Most common, balanced**  
+- Example: **D4s_v5 (4 vCPUs, 16 GB RAM)**  
+Good for web servers, APIs, small databases, business apps.
+
+### **B-series → Burstable VMs (cheap)**  
+- Example: **B2s (2 vCPUs, 4 GB RAM)**  
+Good for low-CPU workloads that spike occasionally.
+
+### **A-series (older generation)**  
+- Budget-friendly for basic apps, dev/test.
+
+### **Av2-series**  
+Similar to A-series, but slightly improved performance for dev/test.
+
+---
+
+📌 **Why they exist**
+Not every workload needs huge memory or GPU.  
+General Purpose VMs are optimized for:
+
+- Balanced performance  
+- Lower cost  
+- Versatility  
+- Handling mixed workloads  
+
+Most applications run perfectly fine with normal CPU/RAM balance → no need to overpay for specialized VM types.
+
+---
+
+📌 **When to use General Purpose?**
+
+Use these VM types for **standard workloads**, such as:
+
+### 🔹 **Web Servers**
+- IIS, Apache, Nginx  
+- Frontend + backend apps
+
+### 🔹 **Application Servers**
+- Business logic apps  
+- Microservices  
+- API hosting
+
+### 🔹 **Small to Medium Databases**
+- SQL Server, MySQL, PostgreSQL  
+
+### 🔹 **Dev/Test environments**
+- QA servers  
+- Demo environments  
+- CICD agents
+
+### 🔹 **Low-to-medium traffic apps**
+- Internal apps  
+- Line-of-business apps  
+
+General Purpose VMs = **Best cost/performance balance for everyday workloads**.
+
+---
+
 
 # 🧠 Why This Matters (FinOps & Engineering Perspective)
 
